@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd" >
+<sqlMap namespace="${csnlc}">
+## csnlc csn getters
+##
+    <typeAlias alias="${csnlc}Query" type="com.alibaba.gear.dao.domain.BaseQuery"/>
+    <typeAlias alias="${csnlc}" type="${cn}"/>
+    <resultMap id="${csnlc}Result" class="${cn}">
+    #foreach($getter in $getters)
+        <result column="${m_getters.get($getter)}" property="${getter}"/>
+    #end
+    </resultMap>
+
+    <sql id="${csnlc}.columns">
+    #foreach($getter in $getters)
+        #set($ctemp = "        ${m_getters.get($getter)}")
+        #if($velocityCount != ($getters.size() ))
+            #set($ctemp = "${ctemp},")
+        #end
+$ctemp
+    #end
+    </sql>
+    <sql id="${csnlc}.sqlForInsert">
+    #foreach($getter in $getters)
+        #if($getter != "id")
+            #set($ctemp = "        ${m_getters.get($getter)}")
+            #if($velocityCount != ($getters.size() ))
+                #set($ctemp = "${ctemp},")
+            #end
+$ctemp
+        #end
+    #end
+    </sql>
+    <sql id="${csnlc}.columnsForInsert">
+    #foreach($getter in $getters)
+        #if($getter != "id")
+            #set($ctemp = "        #${getter}#")
+            #if(${getter} == "gmtModified")
+                #set($ctemp = "        now()")
+            #elseif($getter == "gmtCreate")
+                #set($ctemp = "        now()")
+            #elseif($getter == "gmtCreated")
+                #set($ctemp = "        now()")
+            #end
+            #if($velocityCount != ($getters.size() ))
+                #set($ctemp = "${ctemp},")
+            #end
+$ctemp
+        #end
+
+    #end
+    </sql>
+
+<sql id="${csnlc}.setterForUpdate">
+    <dynamic>
+        #foreach($getter in $getters)
+            #if(${getter} != "gmtModified" && ${getter} != "gmtCreate"  && ${getter} != "gmtCreated")
+                <isNotNull prepend=" , " property="${getter}">
+                    ${m_getters.get($getter)} = #${getter}#
+                </isNotNull>
+            #end
+        #end
+    </dynamic>
+</sql>
+
+
+
+<sql id="${csnlc}.selector">
+    select
+    <include refid="${csnlc}.columns"/>
+    from ${tn}
+</sql>
+
+<sql id="${csnlc}.query_segment">
+    <dynamic prepend=" WHERE ">
+        #foreach($getter in $getters)
+            <isNotNull prepend="AND" property="data.${getter}">
+                ${m_getters.get($getter)} = #data.${getter}#
+            </isNotNull>
+        #end
+        #set($D='$')
+        <isNotEmpty prepend=" AND " property="ins">
+            <iterate property="ins" conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "ins[]")
+                $D${temp_temp}.column:METADATA$ in
+                <iterate property="ins[].values" conjunction=" , " open=" ( " close=" ) ">
+                    #ins[].values[]#
+                </iterate>
+            </iterate>
+        </isNotEmpty>
+        <isNotEmpty prepend=" AND " property="notIns">
+            <iterate property="notIns" conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "notIns[]")
+                $D${temp_temp}.column:METADATA$ not in
+                <iterate property="notIns[].values" conjunction=" , " open=" ( " close=" ) ">
+                    #notIns[].values[]#
+                </iterate>
+            </iterate>
+        </isNotEmpty>
+
+        <isNotEmpty prepend=" AND  " property="equals">
+            <iterate property="equals" conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "equals[]")
+                $D${temp_temp}.column:METADATA$ = #equals[].value#
+
+            </iterate>
+        </isNotEmpty>
+
+
+        <isNotEmpty prepend=" AND  " property="notEquals">
+            <iterate property="notEquals" conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "notEquals[]")
+                $D${temp_temp}.column:METADATA$ != #notEquals[].value#
+
+            </iterate>
+        </isNotEmpty>
+
+
+
+
+        <isNotEmpty prepend=" AND " property="lts">
+            <iterate property="lts" conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "lts[]")
+                $D${temp_temp}.column:METADATA$ <![CDATA[ < ]]> #lts[].value#
+
+            </iterate>
+        </isNotEmpty>
+
+
+        <isNotEmpty prepend=" AND " property="gts">
+            <iterate property="gts" conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "gts[]")
+                $D${temp_temp}.column:METADATA$ <![CDATA[ > ]]> #gts[].value#
+
+            </iterate>
+        </isNotEmpty>
+
+
+        <isNotEmpty prepend=" AND " property="likes">
+            <iterate property="likes" prepend="  " conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "likes[]")
+                $D${temp_temp}.column:METADATA$ like concat('%', #likes[].value#, '%')
+
+            </iterate>
+        </isNotEmpty>
+
+        <isNotEmpty prepend=" AND " property="ltes">
+            <iterate property="ltes" conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "ltes[]")
+                $D${temp_temp}.column:METADATA$ <![CDATA[ <= ]]> #ltes[].value#
+
+            </iterate>
+        </isNotEmpty>
+
+        <isNotEmpty prepend=" AND " property="gtes">
+            <iterate property="gtes" conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "gtes[]")
+                $D${temp_temp}.column:METADATA$ <![CDATA[ >= ]]> #gtes[].value#
+
+            </iterate>
+        </isNotEmpty>
+        <isNotEmpty prepend=" AND " property="ranges">
+            <iterate property="ranges" conjunction=" AND " open=" " close=" ">
+                #set($temp_temp = "ranges[]")
+                (  $D${temp_temp}.column:METADATA$ <![CDATA[ >= ]]> #ranges[].from# and  $D${temp_temp}.column:METADATA$
+                <![CDATA[ <
+                ]]> #ranges[].to#
+                )
+
+            </iterate>
+        </isNotEmpty>
+
+    </dynamic>
+</sql>
+
+
+<insert id="${csnlc}.insert" parameterClass="${csnlc}">
+    insert into ${tn} (
+    <include refid="${csnlc}.sqlForInsert"/>
+    )
+    values(
+    <include refid="${csnlc}.columnsForInsert"/>
+    )
+    <selectKey resultClass="Long" keyProperty="id">
+        SELECT last_insert_id() AS id
+    </selectKey>
+</insert>
+
+<update id="${csnlc}.update" parameterClass="${csnlc}">
+    update ${tn}
+    set gmt_modified = now()
+    <include refid="${csnlc}.setterForUpdate" />
+    where id = #id#
+</update>
+
+
+<update id="${csnlc}.updateByQuery" parameterClass="${csnlc}Query">
+    update ${tn}
+    set gmt_modified = now()
+    <dynamic>
+        #foreach($getter in $getters)
+            #if(${getter} != "gmtModified" && ${getter} != "gmtCreate"  && ${getter} != "gmtCreated")
+                <isNotNull prepend=" , " property="update.${getter}">
+                    ${m_getters.get($getter)} = #update.${getter}#
+                </isNotNull>
+            #end
+        #end
+    </dynamic>
+    <include refid="${csnlc}.query_segment"/>
+</update>
+
+
+<insert id="${csnlc}.insertOrUpdate" parameterClass="${csnlc}">
+    insert into ${tn} (
+    <include refid="${csnlc}.sqlForInsert"/>
+    )
+    values(
+    <include refid="${csnlc}.columnsForInsert"/>
+    )
+    on duplicate key update
+    gmt_modified = now()
+    <include refid="${csnlc}.setterForUpdate" />
+    <selectKey resultClass="Long" keyProperty="id">
+        SELECT last_insert_id() AS id
+    </selectKey>
+</insert>
+
+<!-- Delete -->
+<delete id="${csnlc}.delete">
+    delete from ${tn}
+    <include refid="${csnlc}.query_segment"/>
+</delete>
+
+<delete id="${csnlc}.deleteById">
+    delete from ${tn}
+    where id = #id#
+
+</delete>
+
+
+<!-- query class -->
+<sql id="${csnlc}.groupBy">
+    <isNotEmpty prepend="  " property="groupBys">
+        group by
+        <iterate property="groupBys" conjunction=" , " open="" close="">
+            #groupBys[]:METADATA#
+        </iterate>
+    </isNotEmpty>
+</sql>
+
+<sql id="${csnlc}.orderby">
+    <isNotEmpty prepend="  " property="orderBys">
+        order by
+        <iterate property="orderBys" conjunction=" , " open="" close="">
+            $orderBys[].column:METADATA$ $orderBys[].direction:SQLKEYWORD$
+        </iterate>
+    </isNotEmpty>
+</sql>
+
+
+<select id="${csnlc}.query" resultMap="${csnlc}Result" parameterClass="${csnlc}Query">
+    <include refid="${csnlc}.selector"/>
+    <include refid="${csnlc}.query_segment"/>
+    <include refid="${csnlc}.groupBy"/>
+    <include refid="${csnlc}.orderby"/>
+</select>
+
+<select id="${csnlc}.query4page" resultMap="${csnlc}Result" parameterClass="${csnlc}Query">
+    <include refid="${csnlc}.selector"/>
+    <include refid="${csnlc}.query_segment"/>
+    <include refid="${csnlc}.groupBy"/>
+    <include refid="${csnlc}.orderby"/>
+    limit $startRowForMysql:METADATA$, $pageSize:SQLKEYWORD$
+</select>
+
+
+<select id="${csnlc}.count" resultClass="java.lang.Long">
+    SELECT COUNT(1) FROM ${tn}
+    <include refid="${csnlc}.query_segment"/>
+</select>
+
+<select id="${csnlc}.getById" resultMap="${csnlc}Result">
+    <include refid="${csnlc}.selector"/>
+    where id = #id#
+</select>
+</sqlMap>
